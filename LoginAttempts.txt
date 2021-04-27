@@ -1,0 +1,6 @@
+//View successful and failed logon attempts
+
+SigninLogs
+| where TimeGenerated > ago(1d)
+| extend SigninStatus = iff(ResultType == 0, "✔️ Success", "❌ Failure")
+| project TimeGenerated, SigninStatus, Identity, AlternateSignInName, AppDisplayName, IPAddress, Location, OperationName, ClientAppUsed, UserAgent, ResultDescription, DeviceDetail
