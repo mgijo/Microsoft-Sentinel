@@ -1,0 +1,4 @@
+//Below query to get result for number of attempts using Legacy protocols
+SigninLogs
+| where TimeGenerated >= ago(180d)
+| summarize LegacyAttempts=count() by ClientAppUsed
