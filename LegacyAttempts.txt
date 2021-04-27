@@ -3,3 +3,11 @@
 SigninLogs
 | where TimeGenerated >= ago(180d)
 | summarize LegacyAttempts=count() by ClientAppUsed
+
+
+//Another query to look for attempts per ClientAppUsed
+SigninLogs
+| where TimeGenerated > ago(180d)
+| where ClientAppUsed == "IMAP4" //IMAP4 as an example here
+| summarize Result=count() by ClientAppUsed, Identity
+| sort by Result
