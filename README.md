@@ -1,3 +1,3 @@
 # Azure Sentinel
 
-Detection and lookup queries for Azure Sentinel
+Custom Workbooks, Detection, Lookup queries and more :)
