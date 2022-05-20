@@ -1,0 +1,308 @@
+
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## Azure AD Sign-in Gelocation Workbook - Successful Sign-ins\n---"
+      },
+      "name": "text - 2"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "parameters": [
+          {
+            "id": "ccd5adcd-8d59-4cfe-99ec-98075de2e253",
+            "version": "KqlParameterItem/1.0",
+            "name": "DefaultSubscription_Internal",
+            "type": 1,
+            "isRequired": true,
+            "query": "where type =~ 'microsoft.operationalinsights/workspaces'\r\n| take 1\r\n| project subscriptionId",
+            "crossComponentResources": [
+              "value::selected"
+            ],
+            "isHiddenWhenLocked": true,
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "1ca69445-60fc-4806-b43d-ac7e6aad630a",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscription",
+            "type": 6,
+            "query": "summarize by subscriptionId\r\n| project value = strcat(\"/subscriptions/\", subscriptionId), label = subscriptionId, selected = iff(subscriptionId =~ '{DefaultSubscription_Internal}', true, false)\r\n",
+            "crossComponentResources": [
+              "value::selected"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources",
+            "value": ""
+          },
+          {
+            "id": "e94aafa3-c5d9-4523-89f0-4e87aa754511",
+            "version": "KqlParameterItem/1.0",
+            "name": "Workspace",
+            "type": 5,
+            "query": "where type =~ 'microsoft.operationalinsights/workspaces'\n| project id",
+            "crossComponentResources": [
+              "{Subscription}"
+            ],
+            "value": "",
+            "typeSettings": {
+              "resourceTypeFilter": {
+                "microsoft.operationalinsights/workspaces": true
+              },
+              "additionalResourceOptions": []
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "eafaa0ec-7c3a-4ee5-babe-9850080c909d",
+            "version": "KqlParameterItem/1.0",
+            "name": "resourceGroup",
+            "type": 1,
+            "query": "resources\r\n| where type =~ 'microsoft.operationalinsights/workspaces'\r\n| where id == \"{Workspace}\"\r\n| project resourceGroup",
+            "crossComponentResources": [
+              "value::selected"
+            ],
+            "isHiddenWhenLocked": true,
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "c4b69c01-2263-4ada-8d9c-43433b739ff3",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "value": {
+              "durationMs": 86400000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ],
+              "allowCustom": true
+            }
+          }
+        ],
+        "style": "above",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 1"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SigninLogs\r\n| where ResultType == 0\r\n| summarize count() by Location",
+        "size": 0,
+        "title": "Successful Signins by Geo-location",
+        "timeContextFromParameter": "TimeRange",
+        "exportFieldName": "Location",
+        "exportParameterName": "SelectedLocation",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "visualization": "map",
+        "mapSettings": {
+          "locInfo": "CountryRegion",
+          "locInfoColumn": "Location",
+          "sizeSettings": "count_",
+          "sizeAggregation": "Sum",
+          "labelSettings": "location",
+          "legendMetric": "count_",
+          "legendAggregation": "Sum",
+          "itemColorSettings": {
+            "nodeColorField": "count_",
+            "colorAggregation": "Sum",
+            "type": "heatmap",
+            "heatmapPalette": "greenRed"
+          }
+        }
+      },
+      "customWidth": "40",
+      "name": "query - 1",
+      "styleSettings": {
+        "maxWidth": "40"
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SigninLogs\r\n| where ResultType == 0\r\n| where UserDisplayName != \"On-Premises Directory Synchronization Service Account\"\r\n| extend AuthMethod = tostring(parse_json(AuthenticationDetails)[0].authenticationMethod)\r\n| extend AuthStatus = iff(AuthenticationRequirement == \"singleFactorAuthentication\" and AuthMethod == \"Password\", \"Single-factor\", \"MFA\") \r\n| summarize count() by AuthStatus, bin_at(TimeGenerated, 1h, now())",
+        "size": 0,
+        "title": "MFA vs Single-factor over time",
+        "timeContextFromParameter": "TimeRange",
+        "timeBrushParameterName": "TimeBrush",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "visualization": "barchart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "MFA",
+              "label": "MFA"
+            },
+            {
+              "seriesName": "Single-factor",
+              "label": "Single-factor"
+            }
+          ]
+        }
+      },
+      "customWidth": "40",
+      "name": "query - 5",
+      "styleSettings": {
+        "maxWidth": "40"
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SigninLogs\r\n| where UserDisplayName != \"On-Premises Directory Synchronization Service Account\"\r\n| where ResultType == 0\r\n| extend AuthMethod = tostring(parse_json(AuthenticationDetails)[0].authenticationMethod)\r\n| where isnotempty( AuthMethod)\r\n| summarize Attempts=count() by AuthMethod",
+        "size": 0,
+        "title": "Authentication methods used",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "visualization": "piechart",
+        "tileSettings": {
+          "showBorder": false,
+          "titleContent": {
+            "columnMatch": "AuthMethod",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "Attempts",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            },
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        },
+        "graphSettings": {
+          "type": 0,
+          "topContent": {
+            "columnMatch": "AuthMethod",
+            "formatter": 1
+          },
+          "centerContent": {
+            "columnMatch": "Attempts",
+            "formatter": 1,
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        }
+      },
+      "customWidth": "20",
+      "name": "query - 4",
+      "styleSettings": {
+        "maxWidth": "10"
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SigninLogs\r\n| where UserDisplayName != \"On-Premises Directory Synchronization Service Account\"\r\n| where ResultType == 0\r\n| extend AuthMethod = tostring(parse_json(AuthenticationDetails)[0].authenticationMethod)\r\n| extend AuthStatus = iff(AuthenticationRequirement == \"singleFactorAuthentication\" and AuthMethod == \"Password\", \"❌ Single-factor\", \"✔️ MFA\") \r\n| evaluate bag_unpack(DeviceDetail)\r\n| project TimeGenerated, AuthStatus, AuthMethod, Identity, UserPrincipalName, AppDisplayName, IPAddress, Location, OperationName, ClientAppUsed, DeviceName = displayName, DeviceTrust=trustType, OS = operatingSystem, FailureReason = ResultDescription",
+        "size": 2,
+        "showAnalytics": true,
+        "timeContextFromParameter": "TimeRange",
+        "showRefreshButton": true,
+        "showExportToExcel": true,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "gridSettings": {
+          "filter": true
+        }
+      },
+      "name": "query - 2"
+    }
+  ],
+  "fallbackResourceIds": [
+    ""
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
